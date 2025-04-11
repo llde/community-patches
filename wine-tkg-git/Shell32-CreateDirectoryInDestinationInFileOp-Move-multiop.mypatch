@@ -2,7 +2,7 @@ diff --git a/dlls/shell32/shlfileop.c b/dlls/shell32/shlfileop.c
 index 24f162023a5..af511820f60 100644
 --- a/dlls/shell32/shlfileop.c
 +++ b/dlls/shell32/shlfileop.c
-@@ -1446,8 +1446,9 @@ static void move_to_dir(FILE_OPERATION *op, const FILE_ENTRY *feFrom, const FILE
+@@ -1476,8 +1476,9 @@ static void move_to_dir(FILE_OPERATION *op, const FILE_ENTRY *feFrom, const FILE
  /* the FO_MOVE operation */
  static int move_files(FILE_OPERATION *op, BOOL multidest, const FILE_LIST *flFrom, const FILE_LIST *flTo)
  {
@@ -12,17 +12,17 @@ index 24f162023a5..af511820f60 100644
 +    BOOL targetIsDir = FALSE;
      const FILE_ENTRY *entryToMove;
      const FILE_ENTRY *fileDest;
- 
-@@ -1468,38 +1469,41 @@ static int move_files(FILE_OPERATION *op, BOOL multidest, const FILE_LIST *flFro
+     int ret;
+@@ -1496,40 +1497,46 @@ static int move_files(FILE_OPERATION *op, BOOL multidest, const FILE_LIST *flFro
+     if (!multidest && !flFrom->bAnyDirectories &&
+         flFrom->dwNumFiles > flTo->dwNumFiles)
+     {
          return ERROR_CANCELLED;
      }
  
--    if (!PathFileExistsW(flTo->feFiles[0].szDirectory))
--    {
--        int ret = SHCreateDirectoryExW(NULL, flTo->feFiles[0].szDirectory, NULL);
--        if (ret)
--            return ret;
--    }
+-    ret = SHCreateDirectoryExW(NULL, flTo->feFiles[0].szDirectory, NULL);
+-    if (ret && ret != ERROR_ALREADY_EXISTS)
+-        return ret;
 -
      if (multidest)
          mismatched = flFrom->dwNumFiles - flTo->dwNumFiles;
@@ -69,6 +69,11 @@ index 24f162023a5..af511820f60 100644
 +            return ERROR_CANCELLED;
 +
 +        if (targetIsDir)
-             move_to_dir(op, entryToMove, fileDest);
+         {
+             if (IsAttribDir(entryToMove->attributes))
+                 move_dir_to_dir(op, multidest, entryToMove, fileDest);
+             else
+                 move_file_to_dir(op, entryToMove, fileDest);
+         }  
          else
              SHNotifyMoveFileW(op, entryToMove->szFullPath, fileDest->szFullPath);
